@@ -38,93 +38,94 @@ export default function App() {
   const currentTitle = showSettings ? TAB_TITLES.settings : TAB_TITLES[activeTab]
 
   return (
-    <div className="min-h-screen bg-app flex flex-col max-w-md mx-auto">
-      {/* Header */}
-      <header className="flex items-center justify-between px-5 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-violet-100/60">
-        <div>
+    /* Full page background */
+    <div className="min-h-screen w-full flex items-start justify-center"
+      style={{ background: 'linear-gradient(160deg, #f0e8ff 0%, #e8f4ff 50%, #f0fff4 100%)' }}>
+
+      {/* Phone-sized app shell — centered on desktop, full screen on mobile */}
+      <div className="w-full max-w-sm flex flex-col bg-app relative"
+        style={{ minHeight: '100svh' }}>
+
+        {/* Header */}
+        <header className="flex items-center justify-between px-5 py-4 bg-white/90 backdrop-blur-md sticky top-0 z-10 border-b border-violet-100">
           <h1 className="text-lg font-extrabold text-slate-800">{currentTitle}</h1>
-          {!showSettings && activeTab === 'dashboard' && (
-            <p className="text-xs text-violet-400 font-semibold mt-0.5">F-1 OPT · Ohio</p>
+          <button
+            onClick={() => setShowSettings(s => !s)}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+              showSettings ? 'text-white shadow-md' : 'bg-violet-50 text-violet-500 hover:bg-violet-100'
+            }`}
+            style={showSettings ? { background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' } : {}}
+          >
+            <Settings size={16} />
+          </button>
+        </header>
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto px-4 pt-4">
+          {showSettings ? (
+            <SettingsPage
+              settings={settings}
+              recurring={recurring}
+              expenses={expenses}
+              onUpdateSettings={updateSettings}
+              onUpdateRecurring={updateRecurring}
+            />
+          ) : activeTab === 'dashboard' ? (
+            <Dashboard
+              expenses={expenses}
+              settings={settings}
+              effectiveBudget={effectiveBudget}
+              onDelete={deleteExpense}
+              onNavigateAdd={() => setActiveTab('add')}
+            />
+          ) : activeTab === 'add' ? (
+            <AddExpense settings={settings} onAdd={addExpense} onNavigateDashboard={() => setActiveTab('dashboard')} />
+          ) : activeTab === 'breakdown' ? (
+            <CategoryBreakdown expenses={expenses} effectiveBudget={effectiveBudget} />
+          ) : activeTab === 'investments' ? (
+            <InvestmentTracker investments={investments} onUpdate={updateInvestments} />
+          ) : (
+            <History expenses={expenses} effectiveBudget={effectiveBudget} />
           )}
-        </div>
-        <button
-          onClick={() => setShowSettings(s => !s)}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-            showSettings ? 'bg-violet-600 text-white shadow-md' : 'bg-violet-50 text-violet-500 hover:bg-violet-100'
-          }`}
-        >
-          <Settings size={16} />
-        </button>
-      </header>
+        </main>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto px-4 pt-4">
-        {showSettings ? (
-          <SettingsPage
-            settings={settings}
-            recurring={recurring}
-            expenses={expenses}
-            onUpdateSettings={updateSettings}
-            onUpdateRecurring={updateRecurring}
-          />
-        ) : activeTab === 'dashboard' ? (
-          <Dashboard
-            expenses={expenses}
-            settings={settings}
-            effectiveBudget={effectiveBudget}
-            onDelete={deleteExpense}
-            onNavigateAdd={() => setActiveTab('add')}
-          />
-        ) : activeTab === 'add' ? (
-          <AddExpense settings={settings} onAdd={addExpense} onNavigateDashboard={() => setActiveTab('dashboard')} />
-        ) : activeTab === 'breakdown' ? (
-          <CategoryBreakdown expenses={expenses} effectiveBudget={effectiveBudget} />
-        ) : activeTab === 'investments' ? (
-          <InvestmentTracker investments={investments} onUpdate={updateInvestments} />
-        ) : (
-          <History expenses={expenses} effectiveBudget={effectiveBudget} />
+        {/* Bottom navigation */}
+        {!showSettings && (
+          <nav className="bg-white border-t border-violet-100 sticky bottom-0"
+            style={{ boxShadow: '0 -4px 20px rgba(139,92,246,0.08)' }}>
+            <div className="flex items-center justify-around px-1 py-1">
+              {NAV_ITEMS.map(({ tab, icon: Icon, label }) => {
+                const isActive = activeTab === tab
+                const isAdd = tab === 'add'
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className="flex flex-col items-center gap-0.5 py-2 px-2 min-w-[52px] transition-all active:scale-95"
+                  >
+                    {isAdd ? (
+                      <>
+                        <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                          style={{ background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)', boxShadow: '0 4px 12px rgba(109,40,217,0.35)' }}>
+                          <Icon size={22} className="text-white" />
+                        </div>
+                        <span className="text-xs font-extrabold text-violet-600">{label}</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-violet-100' : ''}`}>
+                          <Icon size={18} className={isActive ? 'text-violet-600' : 'text-slate-400'} />
+                        </div>
+                        <span className={`text-xs font-bold ${isActive ? 'text-violet-600' : 'text-slate-400'}`}>{label}</span>
+                      </>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </nav>
         )}
-      </main>
-
-      {/* Bottom navigation */}
-      {!showSettings && (
-        <nav className="bg-white shadow-nav border-t border-violet-100/60 sticky bottom-0">
-          <div className="flex items-center justify-around px-2">
-            {NAV_ITEMS.map(({ tab, icon: Icon, label }) => {
-              const isActive = activeTab === tab
-              const isAdd = tab === 'add'
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex flex-col items-center gap-1 py-3 px-3 min-w-[60px] transition-all active:scale-95 ${
-                    isAdd ? '' : isActive ? 'text-violet-600' : 'text-slate-400'
-                  }`}
-                >
-                  {isAdd ? (
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                      isActive
-                        ? 'bg-violet-600 shadow-lg shadow-violet-200'
-                        : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-200'
-                    }`}>
-                      <Icon size={22} className="text-white" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                        isActive ? 'bg-violet-100' : ''
-                      }`}>
-                        <Icon size={18} />
-                      </div>
-                    </>
-                  )}
-                  <span className={`text-xs font-bold ${isAdd ? 'text-violet-600' : ''}`}>{label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </nav>
-      )}
+      </div>
     </div>
   )
 }

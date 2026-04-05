@@ -5,26 +5,33 @@
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
   }
 
-  html {
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
     font-family: 'Nunito', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
-    background-color: #f8f4ff;
+    background: linear-gradient(160deg, #f0e8ff 0%, #e8f4ff 50%, #f0fff4 100%);
     color: #1e1b4b;
-    -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
   }
 
   #root {
-    background-color: #f8f4ff;
-    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100svh;
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: pointer;
   }
 
@@ -40,37 +47,21 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl p-4 shadow-card border border-violet-100/60;
-  }
-
-  .card-lg {
-    @apply bg-white rounded-3xl p-5 shadow-card border border-violet-100/60;
+    @apply bg-white rounded-2xl p-4 border border-violet-100/60;
+    box-shadow: 0 2px 20px rgba(139,92,246,0.08);
   }
 
   .btn-primary {
-    @apply py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-95;
+    @apply w-full py-4 rounded-2xl font-extrabold text-base text-white transition-all active:scale-95;
     background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-    box-shadow: 0 4px 16px rgba(109, 40, 217, 0.30);
-  }
-
-  .btn-primary:hover {
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    box-shadow: 0 4px 16px rgba(109,40,217,0.28);
   }
 
   .btn-secondary {
-    @apply py-3 rounded-xl font-semibold text-sm text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all active:scale-95;
+    @apply py-3 px-6 rounded-xl font-bold text-sm text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all active:scale-95;
   }
 
   .input-field {
-    @apply w-full bg-violet-50/70 border border-violet-100 rounded-xl px-4 py-3 text-sm text-slate-700 placeholder-slate-400
-           focus:outline-none focus:border-violet-400 focus:bg-white transition-all;
-  }
-
-  .stat-card {
-    @apply bg-white rounded-2xl p-4 shadow-card border border-violet-100/60;
-  }
-
-  .tag {
-    @apply text-xs font-semibold px-2.5 py-1 rounded-full;
+    @apply w-full bg-violet-50/80 border border-violet-100 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:bg-white transition-all;
   }
 }
