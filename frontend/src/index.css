@@ -3,14 +3,52 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  }
+
   body {
     @apply bg-gray-950 text-gray-100 antialiased;
+    overscroll-behavior: none;
+  }
+
+  /* Chrome date input dark mode */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+
+  /* Number input arrows hidden for cleaner look */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Smooth scroll */
+  main {
+    scroll-behavior: smooth;
+  }
+
+  /* iOS safe area support */
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
 @layer components {
-  .input {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500
-           focus:outline-none focus:border-blue-500 transition-colors;
+  /* Prevent rubber-band scroll showing white edges */
+  #root {
+    background-color: #030712;
+    min-height: 100vh;
   }
 }
