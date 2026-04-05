@@ -8,20 +8,26 @@
   }
 
   html {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Nunito', system-ui, sans-serif;
   }
 
   body {
-    @apply bg-gray-950 text-gray-100 antialiased;
+    background-color: #f8f4ff;
+    color: #1e1b4b;
+    -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
   }
 
-  /* Chrome date input dark mode */
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.7);
+  #root {
+    background-color: #f8f4ff;
+    min-height: 100vh;
   }
 
-  /* Number input arrows hidden for cleaner look */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+  }
+
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -30,25 +36,41 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
-
-  /* Smooth scroll */
-  main {
-    scroll-behavior: smooth;
-  }
-
-  /* iOS safe area support */
-  .pb-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .pt-safe-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
 }
 
 @layer components {
-  /* Prevent rubber-band scroll showing white edges */
-  #root {
-    background-color: #030712;
-    min-height: 100vh;
+  .card {
+    @apply bg-white rounded-2xl p-4 shadow-card border border-violet-100/60;
+  }
+
+  .card-lg {
+    @apply bg-white rounded-3xl p-5 shadow-card border border-violet-100/60;
+  }
+
+  .btn-primary {
+    @apply py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-95;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    box-shadow: 0 4px 16px rgba(109, 40, 217, 0.30);
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  }
+
+  .btn-secondary {
+    @apply py-3 rounded-xl font-semibold text-sm text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full bg-violet-50/70 border border-violet-100 rounded-xl px-4 py-3 text-sm text-slate-700 placeholder-slate-400
+           focus:outline-none focus:border-violet-400 focus:bg-white transition-all;
+  }
+
+  .stat-card {
+    @apply bg-white rounded-2xl p-4 shadow-card border border-violet-100/60;
+  }
+
+  .tag {
+    @apply text-xs font-semibold px-2.5 py-1 rounded-full;
   }
 }

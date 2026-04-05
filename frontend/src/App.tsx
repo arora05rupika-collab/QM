@@ -18,6 +18,15 @@ const NAV_ITEMS: { tab: Tab; icon: React.ElementType; label: string }[] = [
   { tab: 'history', icon: Clock, label: 'History' },
 ]
 
+const TAB_TITLES: Record<Tab | 'settings', string> = {
+  dashboard: '💰 My Finances',
+  add: 'Log Expense',
+  breakdown: 'Breakdown',
+  investments: 'Investments',
+  history: 'History',
+  settings: 'Settings',
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard')
   const [showSettings, setShowSettings] = useState(false)
@@ -26,36 +35,25 @@ export default function App() {
   const { settings, updateSettings, investments, updateInvestments, recurring, updateRecurring, effectiveBudget } =
     useSettings()
 
-  const handleNavigateAdd = () => setActiveTab('add')
-  const handleNavigateDashboard = () => setActiveTab('dashboard')
+  const currentTitle = showSettings ? TAB_TITLES.settings : TAB_TITLES[activeTab]
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen bg-app flex flex-col max-w-md mx-auto">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-gray-950/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-900">
+      <header className="flex items-center justify-between px-5 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-violet-100/60">
         <div>
-          <h1 className="text-base font-bold text-white tracking-tight">
-            {showSettings
-              ? 'Settings'
-              : activeTab === 'dashboard'
-                ? '💰 My Finances'
-                : activeTab === 'add'
-                  ? 'Log Expense'
-                  : activeTab === 'breakdown'
-                    ? 'Breakdown'
-                    : activeTab === 'investments'
-                      ? 'Investments'
-                      : 'History'}
-          </h1>
+          <h1 className="text-lg font-extrabold text-slate-800">{currentTitle}</h1>
           {!showSettings && activeTab === 'dashboard' && (
-            <p className="text-xs text-gray-500">F-1 OPT · Ohio</p>
+            <p className="text-xs text-violet-400 font-semibold mt-0.5">F-1 OPT · Ohio</p>
           )}
         </div>
         <button
           onClick={() => setShowSettings(s => !s)}
-          className={`p-2 rounded-xl transition-colors ${showSettings ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+            showSettings ? 'bg-violet-600 text-white shadow-md' : 'bg-violet-50 text-violet-500 hover:bg-violet-100'
+          }`}
         >
-          <Settings size={18} />
+          <Settings size={16} />
         </button>
       </header>
 
@@ -75,10 +73,10 @@ export default function App() {
             settings={settings}
             effectiveBudget={effectiveBudget}
             onDelete={deleteExpense}
-            onNavigateAdd={handleNavigateAdd}
+            onNavigateAdd={() => setActiveTab('add')}
           />
         ) : activeTab === 'add' ? (
-          <AddExpense settings={settings} onAdd={addExpense} onNavigateDashboard={handleNavigateDashboard} />
+          <AddExpense settings={settings} onAdd={addExpense} onNavigateDashboard={() => setActiveTab('dashboard')} />
         ) : activeTab === 'breakdown' ? (
           <CategoryBreakdown expenses={expenses} effectiveBudget={effectiveBudget} />
         ) : activeTab === 'investments' ? (
@@ -90,7 +88,7 @@ export default function App() {
 
       {/* Bottom navigation */}
       {!showSettings && (
-        <nav className="bg-gray-950/90 backdrop-blur-md border-t border-gray-900 sticky bottom-0">
+        <nav className="bg-white shadow-nav border-t border-violet-100/60 sticky bottom-0">
           <div className="flex items-center justify-around px-2">
             {NAV_ITEMS.map(({ tab, icon: Icon, label }) => {
               const isActive = activeTab === tab
@@ -99,18 +97,28 @@ export default function App() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex flex-col items-center gap-0.5 py-3 px-3 min-w-[60px] transition-colors active:scale-95 ${
-                    isAdd
-                      ? isActive
-                        ? 'text-emerald-400'
-                        : 'text-emerald-500'
-                      : isActive
-                        ? 'text-white'
-                        : 'text-gray-600'
+                  className={`flex flex-col items-center gap-1 py-3 px-3 min-w-[60px] transition-all active:scale-95 ${
+                    isAdd ? '' : isActive ? 'text-violet-600' : 'text-slate-400'
                   }`}
                 >
-                  <Icon size={isAdd ? 26 : 22} />
-                  <span className="text-xs">{label}</span>
+                  {isAdd ? (
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                      isActive
+                        ? 'bg-violet-600 shadow-lg shadow-violet-200'
+                        : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-200'
+                    }`}>
+                      <Icon size={22} className="text-white" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                        isActive ? 'bg-violet-100' : ''
+                      }`}>
+                        <Icon size={18} />
+                      </div>
+                    </>
+                  )}
+                  <span className={`text-xs font-bold ${isAdd ? 'text-violet-600' : ''}`}>{label}</span>
                 </button>
               )
             })}

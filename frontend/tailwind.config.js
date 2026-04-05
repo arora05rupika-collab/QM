@@ -3,15 +3,19 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Nunito', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a8a',
-        },
+        app: '#f8f4ff',
+        surface: '#ffffff',
+        'surface-2': '#f5f0ff',
+        'surface-3': '#ede9fe',
+      },
+      boxShadow: {
+        card: '0 2px 20px rgba(139,92,246,0.10)',
+        'card-lg': '0 8px 32px rgba(139,92,246,0.14)',
+        nav: '0 -2px 20px rgba(139,92,246,0.08)',
       },
     },
   },

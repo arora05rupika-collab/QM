@@ -2,128 +2,107 @@ import { useMemo } from 'react'
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { Expense } from '../../types'
 import {
-  getMonthExpenses,
-  getTotalSpent,
-  getAllMonthKeys,
-  getMonthLabel,
-  formatCurrency,
-  formatCurrencyDecimal,
-  getSpendingByCategory,
+  getMonthExpenses, getTotalSpent, getAllMonthKeys, getMonthLabel,
+  formatCurrency, formatCurrencyDecimal, getSpendingByCategory,
 } from '../../utils/calculations'
-import { CATEGORY_COLORS } from '../../utils/categories'
+import { CATEGORY_EMOJI } from '../../utils/categories'
 
 interface Props {
   expenses: Expense[]
   effectiveBudget: number
 }
 
-interface MonthData {
-  monthKey: string
-  label: string
-  shortLabel: string
-  totalSpent: number
-  budget: number
-  underBudget: boolean
-  topCategory: string
-  topCategoryAmount: number
-}
-
 export default function History({ expenses, effectiveBudget }: Props) {
   const allMonths = useMemo(() => getAllMonthKeys(expenses), [expenses])
 
-  const monthData: MonthData[] = useMemo(() => {
-    return allMonths.map(monthKey => {
-      const monthExpenses = getMonthExpenses(expenses, monthKey)
-      const totalSpent = getTotalSpent(monthExpenses)
-      const byCategory = getSpendingByCategory(monthExpenses)
-      const topCategory = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0]
+  const monthData = useMemo(() => allMonths.map(monthKey => {
+    const me = getMonthExpenses(expenses, monthKey)
+    const totalSpent = getTotalSpent(me)
+    const byCategory = getSpendingByCategory(me)
+    const topCat = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0]
+    const [year, month] = monthKey.split('-')
+    const d = new Date(Number(year), Number(month) - 1, 1)
+    return {
+      monthKey, label: getMonthLabel(monthKey),
+      shortLabel: d.toLocaleDateString('en-US', { month: 'short' }),
+      totalSpent, budget: effectiveBudget,
+      underBudget: totalSpent <= effectiveBudget,
+      topCategory: topCat?.[0] ?? '—',
+      topCategoryAmount: topCat?.[1] ?? 0,
+    }
+  }), [allMonths, expenses, effectiveBudget])
 
-      const [year, month] = monthKey.split('-')
-      const d = new Date(Number(year), Number(month) - 1, 1)
-      const shortLabel = d.toLocaleDateString('en-US', { month: 'short' })
-
-      return {
-        monthKey,
-        label: getMonthLabel(monthKey),
-        shortLabel,
-        totalSpent,
-        budget: effectiveBudget,
-        underBudget: totalSpent <= effectiveBudget,
-        topCategory: topCategory?.[0] ?? '—',
-        topCategoryAmount: topCategory?.[1] ?? 0,
-      }
-    })
-  }, [allMonths, expenses, effectiveBudget])
-
-  // Streak: consecutive months under budget (most recent first)
   const streak = useMemo(() => {
     let count = 0
-    for (const m of monthData) {
-      if (m.underBudget) count++
-      else break
-    }
+    for (const m of monthData) { if (m.underBudget) count++; else break }
     return count
   }, [monthData])
+
+  const chartData = useMemo(() =>
+    [...monthData].reverse().slice(-6).map(m => ({
+      name: m.shortLabel, spent: m.totalSpent,
+      fill: m.underBudget ? '#10b981' : '#f43f5e',
+    })), [monthData])
 
   const totalAllTime = useMemo(() => expenses.reduce((sum, e) => sum + e.amount, 0), [expenses])
   const avgMonthly = monthData.length > 0 ? totalAllTime / monthData.length : 0
 
-  const chartData = useMemo(
-    () =>
-      [...monthData]
-        .reverse()
-        .slice(-6)
-        .map(m => ({
-          name: m.shortLabel,
-          spent: m.totalSpent,
-          budget: m.budget,
-          fill: m.underBudget ? '#10b981' : '#ef4444',
-        })),
-    [monthData],
-  )
-
   return (
-    <div className="space-y-4 pb-4">
-      <h2 className="text-lg font-semibold text-gray-200 px-1">History</h2>
+    <div className="space-y-4 pb-6">
+
+      {/* Streak hero */}
+      <div className="rounded-3xl p-6 text-white relative overflow-hidden"
+        style={{ background: streak > 0 ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #8b5cf6, #6d28d9)' }}>
+        <div className="absolute top-0 right-0 w-36 h-36 rounded-full opacity-10 bg-white"
+          style={{ transform: 'translate(30%, -30%)' }} />
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-4xl">
+            {streak > 0 ? '🔥' : '💪'}
+          </div>
+          <div>
+            <p className="text-white/80 text-sm font-bold">Budget Streak</p>
+            <p className="text-5xl font-extrabold">{streak}</p>
+            <p className="text-white/70 text-sm font-semibold">
+              {streak === 1 ? 'month' : 'months'} under budget
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
-          <p className="text-2xl font-bold text-emerald-400">{streak}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Month streak</p>
-          <p className="text-xs text-gray-600">under budget</p>
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="bg-white rounded-2xl p-3.5 shadow-card border border-violet-100/60 text-center">
+          <p className="text-xl font-extrabold text-violet-600">{monthData.filter(m => m.underBudget).length}</p>
+          <p className="text-xs font-bold text-slate-400 mt-0.5">Months<br/>under</p>
         </div>
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
-          <p className="text-2xl font-bold text-gray-100">{monthData.filter(m => m.underBudget).length}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Months</p>
-          <p className="text-xs text-gray-600">under budget</p>
+        <div className="bg-white rounded-2xl p-3.5 shadow-card border border-violet-100/60 text-center">
+          <p className="text-xl font-extrabold text-slate-800">{formatCurrency(avgMonthly)}</p>
+          <p className="text-xs font-bold text-slate-400 mt-0.5">Avg<br/>monthly</p>
         </div>
-        <div className="bg-gray-900 rounded-xl p-3 border border-gray-800 text-center">
-          <p className="text-2xl font-bold text-blue-400">{formatCurrency(avgMonthly)}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Avg monthly</p>
-          <p className="text-xs text-gray-600">spending</p>
+        <div className="bg-white rounded-2xl p-3.5 shadow-card border border-violet-100/60 text-center">
+          <p className="text-xl font-extrabold text-indigo-600">{formatCurrency(totalAllTime)}</p>
+          <p className="text-xs font-bold text-slate-400 mt-0.5">All<br/>time</p>
         </div>
       </div>
 
       {/* Chart */}
       {chartData.length > 0 && (
-        <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800">
-          <p className="text-xs text-gray-500 mb-3">Last 6 months vs budget</p>
+        <div className="bg-white rounded-3xl p-4 shadow-card border border-violet-100/60">
+          <p className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3">Last 6 Months</p>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={v => `$${v / 1000}k`} axisLine={false} tickLine={false} />
-              <ReferenceLine y={effectiveBudget} stroke="#374151" strokeDasharray="4 4" label={{ value: 'Budget', fill: '#6b7280', fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }}
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3e8ff" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11, fontFamily: 'Nunito', fontWeight: 700 }}
+                axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontFamily: 'Nunito', fontWeight: 700 }}
+                tickFormatter={v => `$${v / 1000}k`} axisLine={false} tickLine={false} />
+              <ReferenceLine y={effectiveBudget} stroke="#ddd6fe" strokeDasharray="5 4"
+                label={{ value: 'Budget', fill: '#a78bfa', fontSize: 10, fontFamily: 'Nunito', fontWeight: 700 }} />
+              <Tooltip contentStyle={{ background: '#fff', border: '1px solid #ede9fe', borderRadius: 12, fontFamily: 'Nunito', fontWeight: 700 }}
                 formatter={(val: number) => [formatCurrencyDecimal(val), 'Spent']}
-                cursor={{ fill: '#1f2937' }}
-              />
-              <Bar dataKey="spent" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
+                cursor={{ fill: '#f5f3ff' }} />
+              <Bar dataKey="spent" radius={[6, 6, 0, 0]}>
+                {chartData.map((e, i) => <Cell key={i} fill={e.fill} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -131,59 +110,47 @@ export default function History({ expenses, effectiveBudget }: Props) {
       )}
 
       {/* Month list */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {monthData.length === 0 ? (
-          <div className="text-center py-16 text-gray-600">
-            <p className="text-4xl mb-3">📅</p>
-            <p>No history yet</p>
+          <div className="text-center py-16 bg-white rounded-3xl shadow-card border border-violet-100/60">
+            <p className="text-5xl mb-3">📅</p>
+            <p className="text-slate-400 font-bold">No history yet</p>
           </div>
-        ) : (
-          monthData.map((m, i) => {
-            const saved = m.budget - m.totalSpent
-            const pct = Math.min(100, (m.totalSpent / m.budget) * 100)
-            const isCurrentMonth = i === 0
-
-            return (
-              <div key={m.monthKey} className={`bg-gray-900 rounded-2xl p-4 border ${m.underBudget ? 'border-gray-800' : 'border-red-500/20'}`}>
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-200">{m.label}</p>
-                      {isCurrentMonth && (
-                        <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">
-                          current
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Top: {m.topCategory} ({formatCurrencyDecimal(m.topCategoryAmount)})
-                    </p>
+        ) : monthData.map((m, i) => {
+          const saved = m.budget - m.totalSpent
+          const pct = Math.min(100, (m.totalSpent / m.budget) * 100)
+          return (
+            <div key={m.monthKey} className={`bg-white rounded-3xl p-5 shadow-card border transition-all ${
+              m.underBudget ? 'border-violet-100/60' : 'border-rose-200'
+            }`}>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-extrabold text-slate-800">{m.label}</p>
+                    {i === 0 && (
+                      <span className="text-xs bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-bold">current</span>
+                    )}
+                    {m.underBudget && i < streak && <span className="text-base">🔥</span>}
                   </div>
-                  <div className="text-right">
-                    <p className="text-base font-bold text-gray-100">{formatCurrencyDecimal(m.totalSpent)}</p>
-                    <p className={`text-xs font-medium ${m.underBudget ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {m.underBudget ? `✓ saved ${formatCurrency(saved)}` : `✗ over ${formatCurrency(-saved)}`}
-                    </p>
-                  </div>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                    {CATEGORY_EMOJI[m.topCategory] ?? ''} Top: {m.topCategory} ({formatCurrencyDecimal(m.topCategoryAmount)})
+                  </p>
                 </div>
-
-                {/* Progress bar */}
-                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${m.underBudget ? 'bg-emerald-500' : 'bg-red-500'}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-xs text-gray-600 mt-1">
-                  <span>{pct.toFixed(0)}% of {formatCurrency(m.budget)}</span>
-                  {m.underBudget && streak > 0 && i < streak && (
-                    <span className="text-emerald-600">🔥</span>
-                  )}
+                <div className="text-right">
+                  <p className="text-base font-extrabold text-slate-800">{formatCurrencyDecimal(m.totalSpent)}</p>
+                  <p className={`text-xs font-extrabold ${m.underBudget ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {m.underBudget ? `✓ saved ${formatCurrency(saved)}` : `✗ over ${formatCurrency(-saved)}`}
+                  </p>
                 </div>
               </div>
-            )
-          })
-        )}
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${m.underBudget ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                  style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-xs text-slate-400 font-semibold mt-1.5">{pct.toFixed(0)}% of {formatCurrency(m.budget)}</p>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
