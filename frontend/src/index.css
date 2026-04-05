@@ -3,14 +3,65 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    font-family: 'Nunito', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
   body {
-    @apply bg-gray-950 text-gray-100 antialiased;
+    background: linear-gradient(160deg, #f0e8ff 0%, #e8f4ff 50%, #f0fff4 100%);
+    color: #1e1b4b;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100svh;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.4;
+    cursor: pointer;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
   }
 }
 
 @layer components {
-  .input {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500
-           focus:outline-none focus:border-blue-500 transition-colors;
+  .card {
+    @apply bg-white rounded-2xl p-4 border border-violet-100/60;
+    box-shadow: 0 2px 20px rgba(139,92,246,0.08);
+  }
+
+  .btn-primary {
+    @apply w-full py-4 rounded-2xl font-extrabold text-base text-white transition-all active:scale-95;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    box-shadow: 0 4px 16px rgba(109,40,217,0.28);
+  }
+
+  .btn-secondary {
+    @apply py-3 px-6 rounded-xl font-bold text-sm text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full bg-violet-50/80 border border-violet-100 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:bg-white transition-all;
   }
 }
