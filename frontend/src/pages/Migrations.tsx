@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { migrationsApi, connectorsApi } from '../services/api'
-import { ArrowLeftRight, Play, Sparkles, Plus, BarChart2, AlertTriangle, CheckCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { migrationsApi, connectorsApi, discrepanciesApi } from '../services/api'
+import { ArrowLeftRight, Play, Sparkles, Plus, BarChart2, AlertTriangle, CheckCircle, FileCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function StatusBadge({ status }: { status: string }) {
@@ -131,6 +132,7 @@ function CreateMigrationModal({ onClose }: { onClose: () => void }) {
 
 export default function Migrations() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [showCreate, setShowCreate] = useState(false)
   const [selectedJob, setSelectedJob] = useState<any>(null)
 
@@ -138,6 +140,14 @@ export default function Migrations() {
     queryKey: ['migrations'],
     queryFn: migrationsApi.list,
     refetchInterval: 3000, // poll running jobs
+  })
+
+  const generateDiscrepancies = useMutation({
+    mutationFn: (id: string) => discrepanciesApi.generate(id),
+    onSuccess: (data) => {
+      toast.success(`Generated ${data.generated} flashcards (${data.auto_resolved_by_rules} auto-resolved)`)
+    },
+    onError: () => toast.error('Failed to generate discrepancies'),
   })
 
   const generateMapping = useMutation({
@@ -234,6 +244,23 @@ export default function Migrations() {
                       Start
                     </button>
                   )}
+                  {m.field_mapping && (
+                    <button
+                      onClick={() => generateDiscrepancies.mutate(m.id)}
+                      disabled={generateDiscrepancies.isPending}
+                      className="flex items-center gap-1.5 bg-yellow-900 hover:bg-yellow-800 text-yellow-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Validate
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigate(`/flashcards/${m.id}`)}
+                    className="flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-blue-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <FileCheck className="w-3.5 h-3.5" />
+                    Review
+                  </button>
                 </div>
               </div>
 

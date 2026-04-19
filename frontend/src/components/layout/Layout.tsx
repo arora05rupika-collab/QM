@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Database, ArrowLeftRight, Zap, Home, LogOut, Settings, ChevronRight
+  Database, ArrowLeftRight, Zap, Home, LogOut, Settings, ChevronRight, FileCheck
 } from 'lucide-react'
 import { authApi } from '../../services/api'
 import clsx from 'clsx'

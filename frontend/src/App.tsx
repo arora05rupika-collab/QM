@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard'
 import Connectors from './pages/Connectors'
 import Migrations from './pages/Migrations'
 import Automation from './pages/Automation'
+import Flashcards from './pages/Flashcards'
+import ValidationReport from './pages/ValidationReport'
 import Login from './pages/Login'
 
 const qc = new QueryClient({
@@ -28,6 +30,8 @@ export default function App() {
           <Route path="/connectors" element={<PrivateRoute><Connectors /></PrivateRoute>} />
           <Route path="/migrations" element={<PrivateRoute><Migrations /></PrivateRoute>} />
           <Route path="/automation" element={<PrivateRoute><Automation /></PrivateRoute>} />
+          <Route path="/flashcards/:migrationId" element={<PrivateRoute><Flashcards /></PrivateRoute>} />
+          <Route path="/report/:migrationId" element={<PrivateRoute><ValidationReport /></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
       <Toaster

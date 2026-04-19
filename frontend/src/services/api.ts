@@ -2,7 +2,6 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
-// Attach JWT token automatically
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token')
   if (token) cfg.headers.Authorization = `Bearer ${token}`
@@ -48,6 +47,23 @@ export const migrationsApi = {
     }).then(r => r.data),
   start: (jobId: string) => api.post(`/migrations/${jobId}/start`).then(r => r.data),
   getAudit: (jobId: string) => api.get(`/migrations/${jobId}/audit`).then(r => r.data),
+}
+
+// ─── Discrepancies / Flashcards ───────────────────────────────────────────────
+
+export const discrepanciesApi = {
+  generate: (migrationId: string) =>
+    api.post(`/discrepancies/${migrationId}/generate`).then(r => r.data),
+  list: (migrationId: string, params?: object) =>
+    api.get(`/discrepancies/${migrationId}`, { params }).then(r => r.data),
+  next: (migrationId: string) =>
+    api.get(`/discrepancies/${migrationId}/next`).then(r => r.data),
+  stats: (migrationId: string) =>
+    api.get(`/discrepancies/${migrationId}/stats`).then(r => r.data),
+  resolve: (migrationId: string, payload: object) =>
+    api.post(`/discrepancies/${migrationId}/resolve`, payload).then(r => r.data),
+  report: (migrationId: string) =>
+    api.get(`/discrepancies/${migrationId}/report`).then(r => r.data),
 }
 
 // ─── Automation ───────────────────────────────────────────────────────────────

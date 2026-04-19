@@ -112,6 +112,7 @@ class MigrationJob(Base):
     source_connector = relationship("Connector", foreign_keys=[source_connector_id])
     target_connector = relationship("Connector", foreign_keys=[target_connector_id])
     audit_logs = relationship("AuditLog", back_populates="migration")
+    discrepancies = relationship("Discrepancy", back_populates="migration")
 
 
 class AuditLog(Base):
@@ -125,6 +126,73 @@ class AuditLog(Base):
     details = Column(JSON, nullable=True)
     ts = Column(DateTime, server_default=func.now())
     migration = relationship("MigrationJob", back_populates="audit_logs")
+
+
+# ─── Discrepancies & Flashcards ──────────────────────────────────────────────
+
+class DiscrepancyStatus(str, Enum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"    # user agreed with AI suggestion
+    CORRECTED = "corrected"    # user provided a different value
+    REJECTED = "rejected"      # user said source value is correct
+    PROPAGATED = "propagated"  # resolved via propagation from another card
+
+
+class Discrepancy(Base):
+    """
+    One discrepancy = one flashcard.
+    Represents a field-level mismatch or low-confidence mapping
+    that needs human review.
+    """
+    __tablename__ = "discrepancies"
+    id = Column(String, primary_key=True, default=gen_uuid)
+    migration_id = Column(String, ForeignKey("migration_jobs.id"), nullable=False)
+
+    # Where the discrepancy lives
+    entity = Column(String(255), nullable=False)        # e.g. "account.move"
+    record_id = Column(String(255), nullable=True)      # source record PK
+    field = Column(String(255), nullable=False)         # field name
+
+    # Values
+    source_value = Column(Text, nullable=True)          # original value
+    ai_suggested_value = Column(Text, nullable=True)    # what AI mapped to
+    resolved_value = Column(Text, nullable=True)        # final accepted value
+
+    # Confidence & risk
+    confidence = Column(Float, default=0.0)             # 0.0 – 1.0
+    risk_level = Column(String(20), default="medium")   # low / medium / high
+
+    # Ownership (assigned from ERP metadata)
+    assigned_to = Column(String(255), nullable=True)    # email or username
+    owner_field = Column(String(255), nullable=True)    # which ERP field gave the owner
+
+    # Resolution
+    status = Column(SAEnum(DiscrepancyStatus), default=DiscrepancyStatus.PENDING)
+    resolved_by = Column(String(255), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    notes = Column(Text, nullable=True)
+
+    # Propagation fingerprint: hash of (entity, field, source_value) for matching
+    propagation_key = Column(String(255), nullable=True, index=True)
+
+    created_at = Column(DateTime, server_default=func.now())
+    migration = relationship("MigrationJob", back_populates="discrepancies")
+
+
+class PropagationRule(Base):
+    """
+    When a user resolves a discrepancy, the rule is stored here
+    and applied to all matching discrepancies automatically.
+    """
+    __tablename__ = "propagation_rules"
+    id = Column(String, primary_key=True, default=gen_uuid)
+    migration_id = Column(String, ForeignKey("migration_jobs.id"), nullable=False)
+    propagation_key = Column(String(255), nullable=False, index=True)
+    resolved_value = Column(Text, nullable=True)
+    resolution_type = Column(String(20), nullable=False)  # confirmed / corrected / rejected
+    applied_count = Column(Float, default=0)
+    created_by = Column(String(255), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
 
 
 # ─── Automation Workflows ─────────────────────────────────────────────────────
