@@ -177,6 +177,7 @@ async def generate_mapping(mid: str, body: MappingIn):
 
     if body.override:
         mapping = body.override
+        conn.close()
     else:
         src_row = conn.execute("SELECT * FROM connectors WHERE id=?",
                                (job["source_id"],)).fetchone()
@@ -194,8 +195,6 @@ async def generate_mapping(mid: str, body: MappingIn):
             src_schema, tgt_schema,
             body.source_entity, body.target_entity
         )
-    else:
-        conn.close()
 
     conn2 = db.get_conn()
     conn2.execute("UPDATE migrations SET field_mapping=?, status='ready' WHERE id=?",
