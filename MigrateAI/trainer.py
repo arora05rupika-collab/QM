@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from database import get_conn
 
 FEATURE_NAMES = ["semantic", "exact", "substring", "token", "type"]
-MIN_SAMPLES   = 10   # need at least this many examples before training is useful
+MIN_SAMPLES   = 5    # need at least this many examples before training is useful
 
 
 def _normalise(name: str) -> str:
