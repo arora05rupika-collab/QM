@@ -32,6 +32,9 @@ async def run(migration_id: str):
         entities = json.loads(job["entities"] or "[]")
         mapping  = json.loads(job["field_mapping"] or "[]")
         config   = json.loads(job["config"] or "{}")
+
+        if not mapping:
+            raise ValueError("No field mapping found. Open the migration and click 'AI Map Fields' first.")
         batch_sz = config.get("batch_size", 500)
         mode     = config.get("mode", "upsert")
         dry_run  = config.get("dry_run", False)

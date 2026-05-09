@@ -60,8 +60,10 @@ class CSVConnector(BaseConnector):
 
     async def load(self, entity, rows, mode="upsert"):
         path = os.path.join(self._folder(), f"{entity}_migrated.csv")
+        rows = [r for r in rows if any(v is not None for v in r.values())]
+        if not rows:
+            return LoadResult(failed=1, errors=["All rows were empty — run AI Map Fields before migrating"])
         df = pd.DataFrame(rows)
-        write_header = not os.path.exists(path) or mode == "replace"
-        df.to_csv(path, mode="a" if mode == "upsert" else "w",
-                  header=write_header, index=False)
+        # CSV has no real upsert — always overwrite so reruns produce clean output
+        df.to_csv(path, mode="w", header=True, index=False)
         return LoadResult(inserted=len(rows))
