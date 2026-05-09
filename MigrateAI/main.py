@@ -277,12 +277,13 @@ def _do_train():
 
 if __name__ == "__main__":
     import uvicorn
+    port = int(os.getenv("PORT", 8000))
     print("\n" + "="*50)
     print("  MigrateAI — ERP Migration Platform")
     print("="*50)
     print(f"  Database : {db.DB_PATH}")
     print(f"  AI Model : Local (sentence-transformers, no API key needed)")
     print(f"  Training : Auto every 24h + manual via /api/train")
-    print(f"  Open     : http://localhost:8000")
+    print(f"  Open     : http://localhost:{port}")
     print("="*50 + "\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=False)
