@@ -12,7 +12,8 @@ class CSVConnector(BaseConnector):
     """
 
     def _folder(self):
-        return os.path.expanduser(self.config.get("folder", "~/Desktop"))
+        path = self.config.get("folder_path") or self.config.get("folder", "~/Desktop")
+        return os.path.expanduser(path)
 
     async def test(self):
         folder = self._folder()

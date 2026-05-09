@@ -103,6 +103,8 @@ async def get_schema(cid: str):
     c = registry.build(row["type"], json.loads(row["config"]))
     schema = await c.get_schema()
     schema_dict = c.to_schema_dict(schema)
+    if not schema_dict.get("entities"):
+        raise HTTPException(400, "No entities found. Check the folder path and make sure CSV files exist there.")
     conn = db.get_conn()
     conn.execute("UPDATE connectors SET schema_json=? WHERE id=?",
                  (json.dumps(schema_dict), cid))
