@@ -14,10 +14,15 @@ import database as db
 import connectors as registry
 import ai_mapper
 import migrator
+import trainer
 
 # ── Boot ──────────────────────────────────────────────────────────────────────
 db.init()
 app = FastAPI(title="MigrateAI", version="1.0.0")
+
+@app.on_event("startup")
+async def _start_trainer():
+    asyncio.create_task(trainer.daily_training_loop(interval_hours=24))
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 
@@ -236,6 +241,25 @@ def stats():
         "total_records_migrated": int(total_recs),
     }
 
+# ── AI Training ───────────────────────────────────────────────────────────────
+class FeedbackIn(BaseModel):
+    migration_id: Optional[str] = None
+    feedback: list[dict]   # [{source_field, target_field, source_context, target_context, confirmed}]
+
+@app.post("/api/feedback")
+def submit_feedback(body: FeedbackIn):
+    ai_mapper.save_feedback(body.feedback, body.migration_id)
+    return {"saved": len(body.feedback)}
+
+@app.get("/api/train/stats")
+def train_stats():
+    return ai_mapper.feedback_stats()
+
+@app.post("/api/train")
+async def trigger_train(background: BackgroundTasks):
+    background.add_task(_do_train)
+    return {"message": "Training started in background"}
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 def _get_connector_row(cid: str):
     conn = db.get_conn()
@@ -247,14 +271,17 @@ def _get_connector_row(cid: str):
 async def _run_async(mid: str):
     await migrator.run(mid)
 
+def _do_train():
+    trainer.train()
+
 if __name__ == "__main__":
     import uvicorn
-    key = os.getenv("ANTHROPIC_API_KEY", "")
     print("\n" + "="*50)
     print("  MigrateAI — ERP Migration Platform")
     print("="*50)
     print(f"  Database : {db.DB_PATH}")
-    print(f"  AI Key   : {'✓ set' if key else '✗ missing (set ANTHROPIC_API_KEY)'}")
+    print(f"  AI Model : Local (sentence-transformers, no API key needed)")
+    print(f"  Training : Auto every 24h + manual via /api/train")
     print(f"  Open     : http://localhost:8000")
     print("="*50 + "\n")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

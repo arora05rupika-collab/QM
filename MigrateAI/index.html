@@ -70,6 +70,9 @@
     <div class="nav-item" onclick="nav('migrations')" id="nav-migrations">
       <span>🚀</span> Migrations
     </div>
+    <div class="nav-item" onclick="nav('training')" id="nav-training">
+      <span>🧠</span> AI Training
+    </div>
     <div style="flex:1;"></div>
     <div style="padding:10px 14px; font-size:11px; color:#374151;">
       <div id="api-status" style="display:flex; align-items:center; gap:6px;">
@@ -149,6 +152,81 @@
       </div>
       <div id="migrations-list" style="display:flex; flex-direction:column; gap:12px;">
         <div style="color:#4b5563; font-size:13px;">Loading...</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ AI TRAINING ═══════════════════ -->
+    <section id="page-training" style="display:none;">
+      <div style="margin-bottom:28px;">
+        <h1 style="font-size:22px; font-weight:700; color:#f1f5f9;">AI Training</h1>
+        <p style="color:#64748b; font-size:14px; margin-top:4px;">Your local model learns from every mapping you confirm or reject</p>
+      </div>
+
+      <!-- How it works -->
+      <div class="card" style="padding:20px; margin-bottom:20px; border-color:#2d3f5a;">
+        <div style="font-size:14px; font-weight:600; color:#a5b4fc; margin-bottom:12px;">🧠 How the local AI works</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; font-size:13px; color:#94a3b8;">
+          <div style="background:#0f1117; border-radius:8px; padding:14px;">
+            <div style="font-size:20px; margin-bottom:8px;">📥</div>
+            <div style="font-weight:600; color:#e2e8f0; margin-bottom:4px;">1. Map</div>
+            Click "AI Map Fields" in any migration. The local model (all-MiniLM-L6-v2, ~80MB) matches fields using semantic similarity — no internet needed.
+          </div>
+          <div style="background:#0f1117; border-radius:8px; padding:14px;">
+            <div style="font-size:20px; margin-bottom:8px;">👍</div>
+            <div style="font-weight:600; color:#e2e8f0; margin-bottom:4px;">2. Confirm / Reject</div>
+            Use the thumbs up/down buttons next to each mapped field. Every click is saved as a training example.
+          </div>
+          <div style="background:#0f1117; border-radius:8px; padding:14px;">
+            <div style="font-size:20px; margin-bottom:8px;">🔄</div>
+            <div style="font-weight:600; color:#e2e8f0; margin-bottom:4px;">3. Retrain</div>
+            The model retrains automatically every 24h, or you can click "Train Now". After 10+ examples it learns your naming conventions.
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;">
+        <div class="card" style="padding:16px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Total Feedback</div>
+          <div id="tr-total" style="font-size:26px; font-weight:700; color:#e2e8f0;">—</div>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Confirmed</div>
+          <div id="tr-pos" style="font-size:26px; font-weight:700; color:#4ade80;">—</div>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Rejected</div>
+          <div id="tr-neg" style="font-size:26px; font-weight:700; color:#f87171;">—</div>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Last Trained</div>
+          <div id="tr-when" style="font-size:13px; font-weight:600; color:#a5b4fc; margin-top:4px;">—</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <!-- Weights -->
+        <div class="card" style="padding:20px;">
+          <div style="font-size:14px; font-weight:600; color:#e2e8f0; margin-bottom:14px;">Current Scoring Weights</div>
+          <div id="tr-weights" style="display:flex; flex-direction:column; gap:10px;"></div>
+          <div style="font-size:11px; color:#4b5563; margin-top:12px;">Weights are updated each time training runs</div>
+        </div>
+
+        <!-- Train now -->
+        <div class="card" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+          <div style="font-size:14px; font-weight:600; color:#e2e8f0;">Manual Training</div>
+          <div style="font-size:13px; color:#64748b;">
+            Trigger retraining immediately. Needs at least 10 feedback examples (5 confirmed + 5 rejected) before it can improve.
+          </div>
+          <button class="btn btn-primary" onclick="trainNow()" id="btn-train-now">⚡ Train Now</button>
+          <div style="font-size:11px; color:#4b5563;">Auto-trains every 24 hours while server is running</div>
+
+          <!-- Last log -->
+          <div style="margin-top:6px;">
+            <div class="label">Last Training Log</div>
+            <pre id="tr-log" style="background:#0f1117; border-radius:8px; padding:12px; font-size:11px; color:#94a3b8; max-height:140px; overflow-y:auto; white-space:pre-wrap; margin:0;">—</pre>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -314,11 +392,12 @@ const CONNECTOR_ICONS = {
 // Navigation
 // ═══════════════════════════════════════════════════════════
 function nav(page) {
-  ['dashboard','connectors','migrations'].forEach(p => {
+  ['dashboard','connectors','migrations','training'].forEach(p => {
     document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
     document.getElementById('nav-'+p).classList.toggle('active', p===page);
   });
   if (page==='dashboard') loadDashboard();
+  if (page==='training')  loadTrainingStats();
   if (page==='connectors') loadConnectors();
   if (page==='migrations') loadMigrations();
 }
@@ -778,35 +857,86 @@ async function refreshDetail() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+let _currentMapping = [];
+
 function renderMapping(mapping) {
+  _currentMapping = mapping;
   const el = document.getElementById('mapping-content');
   el.innerHTML = `
-    <div style="font-size:12px;color:#64748b;margin-bottom:12px;">${mapping.length} field mappings</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:12px;color:#64748b;">${mapping.length} field mappings</div>
+      <button class="btn btn-secondary btn-sm" onclick="submitAllFeedback()" id="btn-submit-fb" style="display:none;">
+        💾 Save Feedback
+      </button>
+    </div>
     <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <thead>
         <tr style="color:#64748b;text-align:left;border-bottom:1px solid #2d3148;">
           <th style="padding:8px 10px;">Source Field</th>
           <th style="padding:8px 10px;">Target Field</th>
-          <th style="padding:8px 4px;">Confidence</th>
+          <th style="padding:8px 4px;">Conf</th>
           <th style="padding:8px 10px;">Transform</th>
           <th style="padding:8px 10px;">Reason</th>
+          <th style="padding:8px 6px;">Feedback</th>
         </tr>
       </thead>
-      <tbody>
-        ${mapping.map(m => {
+      <tbody id="mapping-tbody">
+        ${mapping.map((m, idx) => {
           const conf = m.confidence || 0;
           const cls = conf >= .8 ? 'conf-high' : conf >= .5 ? 'conf-mid' : 'conf-low';
-          return `<tr style="border-bottom:1px solid #1e2240;">
+          return `<tr style="border-bottom:1px solid #1e2240;" id="mrow-${idx}">
             <td style="padding:8px 10px;color:#a5b4fc;">${esc(m.source_field||'—')}</td>
             <td style="padding:8px 10px;color:#e2e8f0;">${esc(m.target_field||'—')}</td>
             <td style="padding:8px 4px;" class="${cls}">${(conf*100).toFixed(0)}%</td>
             <td style="padding:8px 10px;color:#f59e0b;font-family:monospace;font-size:11px;">${esc(m.transform||'')}</td>
             <td style="padding:8px 10px;color:#64748b;">${esc(m.reason||'')}</td>
+            <td style="padding:8px 6px;white-space:nowrap;">
+              <button onclick="setFeedback(${idx},true,this)"  title="Correct mapping"
+                style="background:none;border:none;cursor:pointer;font-size:16px;opacity:.5;transition:opacity .1s;" id="fb-yes-${idx}">👍</button>
+              <button onclick="setFeedback(${idx},false,this)" title="Wrong mapping"
+                style="background:none;border:none;cursor:pointer;font-size:16px;opacity:.5;transition:opacity .1s;" id="fb-no-${idx}">👎</button>
+            </td>
           </tr>`;
         }).join('')}
       </tbody>
     </table></div>`;
+}
+
+const _feedbackState = {};  // idx -> true/false/null
+
+function setFeedback(idx, confirmed, btn) {
+  _feedbackState[idx] = confirmed;
+  const yes = document.getElementById(`fb-yes-${idx}`);
+  const no  = document.getElementById(`fb-no-${idx}`);
+  if (yes && no) {
+    yes.style.opacity = confirmed ? '1' : '.3';
+    no.style.opacity  = !confirmed ? '1' : '.3';
+  }
+  const anySet = Object.keys(_feedbackState).length > 0;
+  const fbBtn = document.getElementById('btn-submit-fb');
+  if (fbBtn) fbBtn.style.display = anySet ? 'inline-block' : 'none';
+}
+
+async function submitAllFeedback() {
+  const keys = Object.keys(_feedbackState);
+  if (!keys.length) return;
+  const feedback = keys.map(i => {
+    const m = _currentMapping[i];
+    return {
+      source_field: m.source_field || '',
+      target_field: m.target_field || '',
+      source_context: {},
+      target_context: {},
+      confirmed: _feedbackState[i],
+    };
+  });
+  try {
+    await api('POST', '/api/feedback', { migration_id: currentMigrationId, feedback });
+    toast(`Saved ${feedback.length} feedback examples — model will improve!`, 'ok');
+    const fbBtn = document.getElementById('btn-submit-fb');
+    if (fbBtn) fbBtn.style.display = 'none';
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 async function generateMapping() {
@@ -903,6 +1033,52 @@ function toast(msg, type='ok') {
   el.style.color = type==='ok' ? '#4ade80' : '#f87171';
   el.style.border = `1px solid ${type==='ok' ? '#166534' : '#7f1d1d'}`;
   _toastTimer = setTimeout(() => el.style.opacity='0', 3500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI Training page
+// ═══════════════════════════════════════════════════════════
+async function loadTrainingStats() {
+  try {
+    const s = await api('GET', '/api/train/stats');
+    document.getElementById('tr-total').textContent = s.total_feedback;
+    document.getElementById('tr-pos').textContent   = s.positive;
+    document.getElementById('tr-neg').textContent   = s.negative;
+    document.getElementById('tr-when').textContent  =
+      s.weights_updated ? new Date(s.weights_updated).toLocaleString() : 'Never';
+    document.getElementById('tr-log').textContent   = s.last_train_log || '—';
+
+    const weights = s.current_weights || {};
+    const wEl = document.getElementById('tr-weights');
+    const NAMES = {
+      semantic:'Semantic similarity', exact:'Exact name match',
+      substring:'Substring match', token:'Token overlap', type:'Data type match'
+    };
+    wEl.innerHTML = Object.entries(weights).map(([k,v]) => {
+      const pct = Math.round(v * 100);
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span style="color:#94a3b8;">${NAMES[k]||k}</span>
+          <span style="color:#a5b4fc;font-weight:600;">${pct}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pct}%;background:${pct>30?'#6366f1':'#38bdf8'};"></div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { toast('Could not load training stats: '+e.message, 'error'); }
+}
+
+async function trainNow() {
+  const btn = document.getElementById('btn-train-now');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Training...';
+  try {
+    await api('POST', '/api/train');
+    toast('Training started in background — refresh in a few seconds', 'ok');
+    setTimeout(loadTrainingStats, 4000);
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '⚡ Train Now'; }
 }
 
 // ═══════════════════════════════════════════════════════════

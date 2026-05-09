@@ -52,6 +52,23 @@ def init():
         message      TEXT NOT NULL,
         ts           TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS mapping_feedback (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_field    TEXT NOT NULL,
+        target_field    TEXT NOT NULL,
+        source_context  TEXT,   -- JSON: {entity, data_type, sample}
+        target_context  TEXT,   -- JSON: {entity, data_type, sample}
+        confirmed       INTEGER NOT NULL,  -- 1=match, 0=not a match
+        migration_id    TEXT,
+        ts              TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS model_state (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now'))
+    );
     """)
     conn.commit()
     conn.close()
