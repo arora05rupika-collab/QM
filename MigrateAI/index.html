@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MigrateAI — ERP Migration Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { --accent: #6366f1; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+  .card { background: #1a1d2e; border: 1px solid #2d3148; border-radius: 12px; }
+  .btn { padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all .15s; border: none; }
+  .btn-primary { background: #6366f1; color: #fff; }
+  .btn-primary:hover { background: #4f52d3; }
+  .btn-secondary { background: #2d3148; color: #a5b4fc; }
+  .btn-secondary:hover { background: #383c5a; }
+  .btn-danger { background: #7f1d1d; color: #fca5a5; }
+  .btn-danger:hover { background: #991b1b; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .input { background: #0f1117; border: 1px solid #2d3148; border-radius: 8px; color: #e2e8f0; padding: 9px 12px; width: 100%; font-size: 14px; }
+  .input:focus { outline: none; border-color: #6366f1; }
+  .input::placeholder { color: #4b5563; }
+  .select { background: #0f1117; border: 1px solid #2d3148; border-radius: 8px; color: #e2e8f0; padding: 9px 12px; width: 100%; font-size: 14px; cursor: pointer; }
+  .select:focus { outline: none; border-color: #6366f1; }
+  .label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; font-weight: 500; letter-spacing: .03em; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .badge-done { background: #052e16; color: #4ade80; }
+  .badge-running { background: #1e1b4b; color: #a5b4fc; }
+  .badge-failed { background: #450a0a; color: #f87171; }
+  .badge-ready { background: #0c1a2e; color: #38bdf8; }
+  .badge-pending { background: #1c1917; color: #a3a3a3; }
+  .nav-item { padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #94a3b8; transition: all .12s; display: flex; align-items: center; gap: 10px; }
+  .nav-item:hover { background: #1a1d2e; color: #e2e8f0; }
+  .nav-item.active { background: #1e1f3a; color: #a5b4fc; }
+  .progress-bar { height: 6px; background: #1a1d2e; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a5b4fc); border-radius: 3px; transition: width .5s ease; }
+  .log-error { color: #f87171; }
+  .log-info  { color: #94a3b8; }
+  .conf-high { color: #4ade80; }
+  .conf-mid  { color: #facc15; }
+  .conf-low  { color: #f87171; }
+  .tab { padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; color: #64748b; transition: all .12s; }
+  .tab.active { color: #a5b4fc; border-color: #6366f1; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #2d3148; border-top-color: #6366f1; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0f1117; }
+  ::-webkit-scrollbar-thumb { background: #2d3148; border-radius: 3px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: #1a1d2e; border: 1px solid #2d3148; border-radius: 14px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; }
+  .erp-icon { font-size: 28px; }
+</style>
+</head>
+<body>
+
+<div id="app" style="display:flex; min-height:100vh;">
+
+  <!-- Sidebar -->
+  <aside style="width:220px; min-width:220px; background:#13152a; border-right:1px solid #1e2240; padding:20px 12px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh;">
+    <div style="padding:10px 14px 20px;">
+      <div style="font-size:18px; font-weight:700; color:#e2e8f0;">Migrate<span style="color:#6366f1;">AI</span></div>
+      <div style="font-size:11px; color:#4b5563; margin-top:2px;">ERP Migration Platform</div>
+    </div>
+    <div class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">
+      <span>📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="nav('connectors')" id="nav-connectors">
+      <span>🔌</span> Connectors
+    </div>
+    <div class="nav-item" onclick="nav('migrations')" id="nav-migrations">
+      <span>🚀</span> Migrations
+    </div>
+    <div style="flex:1;"></div>
+    <div style="padding:10px 14px; font-size:11px; color:#374151;">
+      <div id="api-status" style="display:flex; align-items:center; gap:6px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#374151;display:inline-block;" id="api-dot"></span>
+        <span id="api-text">Checking...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main style="flex:1; overflow-y:auto; padding:32px 36px;">
+
+    <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+    <section id="page-dashboard">
+      <div style="margin-bottom:28px;">
+        <h1 style="font-size:22px; font-weight:700; color:#f1f5f9;">Dashboard</h1>
+        <p style="color:#64748b; font-size:14px; margin-top:4px;">Overview of your migration activity</p>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;">
+        <div class="card" style="padding:20px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Total Migrations</div>
+          <div id="stat-total" style="font-size:28px; font-weight:700; color:#e2e8f0;">—</div>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Completed</div>
+          <div id="stat-done" style="font-size:28px; font-weight:700; color:#4ade80;">—</div>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Connectors</div>
+          <div id="stat-connectors" style="font-size:28px; font-weight:700; color:#a5b4fc;">—</div>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Records Migrated</div>
+          <div id="stat-records" style="font-size:28px; font-weight:700; color:#38bdf8;">—</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="card" style="padding:20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:16px; color:#e2e8f0;">Recent Migrations</div>
+          <div id="dashboard-migrations" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="color:#4b5563; font-size:13px;">Loading...</div>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:16px; color:#e2e8f0;">Connectors</div>
+          <div id="dashboard-connectors" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="color:#4b5563; font-size:13px;">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ CONNECTORS ═══════════════════ -->
+    <section id="page-connectors" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+        <div>
+          <h1 style="font-size:22px; font-weight:700; color:#f1f5f9;">Connectors</h1>
+          <p style="color:#64748b; font-size:14px; margin-top:4px;">Manage your data source and target connections</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddConnector()">+ Add Connector</button>
+      </div>
+
+      <div id="connectors-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:16px;">
+        <div style="color:#4b5563; font-size:13px;">Loading...</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ MIGRATIONS ═══════════════════ -->
+    <section id="page-migrations" style="display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+        <div>
+          <h1 style="font-size:22px; font-weight:700; color:#f1f5f9;">Migrations</h1>
+          <p style="color:#64748b; font-size:14px; margin-top:4px;">Create and run data migration jobs</p>
+        </div>
+        <button class="btn btn-primary" onclick="openNewMigration()">+ New Migration</button>
+      </div>
+      <div id="migrations-list" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="color:#4b5563; font-size:13px;">Loading...</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════ ADD CONNECTOR MODAL ═══════════════════ -->
+<div id="modal-connector" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-connector')">
+  <div class="modal" style="padding:28px;">
+    <div style="font-size:18px; font-weight:700; margin-bottom:22px; color:#f1f5f9;">Add Connector</div>
+
+    <!-- Step 1: Choose type -->
+    <div id="conn-step-1">
+      <div class="label">Choose connector type</div>
+      <div id="connector-types-grid" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px; margin-bottom:20px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-connector')">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Configure -->
+    <div id="conn-step-2" style="display:none;">
+      <button onclick="showStep(1)" style="background:none;border:none;color:#6366f1;cursor:pointer;font-size:13px;margin-bottom:16px;padding:0;">← Back</button>
+      <div style="margin-bottom:16px;">
+        <div class="label">Connector Name</div>
+        <input class="input" id="conn-name" placeholder="e.g. Production PostgreSQL" />
+      </div>
+      <div id="conn-config-fields"></div>
+      <div style="display:flex; gap:8px; margin-top:20px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-connector')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="saveConnector()" id="btn-save-conn">Save Connector</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ NEW MIGRATION MODAL ═══════════════════ -->
+<div id="modal-migration" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-migration')">
+  <div class="modal" style="padding:28px; max-width:640px;">
+    <div style="font-size:18px; font-weight:700; margin-bottom:22px; color:#f1f5f9;">New Migration</div>
+
+    <div id="mig-step-1">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
+        <div>
+          <div class="label">Migration Name</div>
+          <input class="input" id="mig-name" placeholder="e.g. SAP → PostgreSQL Q1" />
+        </div>
+        <div>
+          <div class="label">Mode</div>
+          <select class="select" id="mig-mode">
+            <option value="upsert">Upsert (insert + update)</option>
+            <option value="insert">Insert only</option>
+            <option value="truncate">Truncate + reload</option>
+          </select>
+        </div>
+        <div>
+          <div class="label">Source Connector</div>
+          <select class="select" id="mig-source" onchange="loadEntities('source')"></select>
+        </div>
+        <div>
+          <div class="label">Target Connector</div>
+          <select class="select" id="mig-target" onchange="loadEntities('target')"></select>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
+        <div>
+          <div class="label">Batch Size</div>
+          <input class="input" id="mig-batch" type="number" value="500" min="1" max="5000" />
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; padding-top:22px;">
+          <input type="checkbox" id="mig-dry-run" style="width:16px;height:16px;accent-color:#6366f1;" />
+          <label for="mig-dry-run" style="font-size:14px; color:#94a3b8; cursor:pointer;">Dry run (no writes)</label>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <div class="label" style="margin:0;">Entity Pairs</div>
+          <button class="btn btn-secondary btn-sm" onclick="addEntityPair()">+ Add Pair</button>
+        </div>
+        <div id="entity-pairs" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:20px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-migration')">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="saveMigration()">Create Migration</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MIGRATION DETAIL MODAL ═══════════════════ -->
+<div id="modal-mig-detail" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-mig-detail')">
+  <div class="modal" style="padding:28px; max-width:720px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+      <div style="font-size:18px; font-weight:700; color:#f1f5f9;" id="detail-title">Migration</div>
+      <button onclick="closeModal('modal-mig-detail')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:20px;">×</button>
+    </div>
+
+    <div style="display:flex; gap:8px; border-bottom:1px solid #2d3148; margin-bottom:20px;">
+      <div class="tab active" onclick="detailTab('overview')" id="dt-overview">Overview</div>
+      <div class="tab" onclick="detailTab('mapping')" id="dt-mapping">Field Mapping</div>
+      <div class="tab" onclick="detailTab('logs')" id="dt-logs">Logs</div>
+    </div>
+
+    <div id="detail-overview">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;">
+        <div class="card" style="padding:14px;">
+          <div class="label">Status</div>
+          <div id="detail-status-badge" style="margin-top:4px;"></div>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="label">Progress</div>
+          <div id="detail-progress-text" style="font-size:14px; color:#e2e8f0; margin-bottom:6px; margin-top:4px;">—</div>
+          <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="label">Source → Target</div>
+          <div id="detail-connectors" style="font-size:13px; color:#e2e8f0; margin-top:4px;">—</div>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div class="label">Records</div>
+          <div id="detail-records" style="font-size:13px; color:#e2e8f0; margin-top:4px;">—</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="generateMapping()" id="btn-map">🤖 AI Map Fields</button>
+        <button class="btn btn-primary btn-sm" onclick="runMigration()" id="btn-run">▶ Run Migration</button>
+        <button class="btn btn-secondary btn-sm" onclick="refreshDetail()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div id="detail-mapping" style="display:none;">
+      <div id="mapping-content">
+        <div style="color:#4b5563; font-size:13px;">No mapping yet. Click "AI Map Fields" to generate one.</div>
+      </div>
+    </div>
+
+    <div id="detail-logs" style="display:none;">
+      <div id="logs-content" style="font-family:monospace; font-size:12px; line-height:1.7; max-height:340px; overflow-y:auto; background:#0f1117; border-radius:8px; padding:14px;">
+        <div style="color:#4b5563;">No logs yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════
+let selectedConnType = null;
+let connectors = [];
+let migrations = [];
+let currentMigrationId = null;
+let pollInterval = null;
+const CONNECTOR_ICONS = {
+  csv:'📄', postgresql:'🐘', mysql:'🐬', salesforce:'☁️', sap:'🏭',
+  oracle:'🔴', dynamics:'🪟', netsuite:'🌐', quickbooks:'💚',
+  hubspot:'🧡', zoho:'🟣', rest_api:'🔌'
+};
+
+// ═══════════════════════════════════════════════════════════
+// Navigation
+// ═══════════════════════════════════════════════════════════
+function nav(page) {
+  ['dashboard','connectors','migrations'].forEach(p => {
+    document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none';
+    document.getElementById('nav-'+p).classList.toggle('active', p===page);
+  });
+  if (page==='dashboard') loadDashboard();
+  if (page==='connectors') loadConnectors();
+  if (page==='migrations') loadMigrations();
+}
+
+// ═══════════════════════════════════════════════════════════
+// API helpers
+// ═══════════════════════════════════════════════════════════
+async function api(method, path, body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(()=>({detail: r.statusText}));
+    throw new Error(err.detail || r.statusText);
+  }
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+// Dashboard
+// ═══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const s = await api('GET', '/api/stats');
+    document.getElementById('stat-total').textContent = s.total_migrations;
+    document.getElementById('stat-done').textContent  = s.done_migrations;
+    document.getElementById('stat-connectors').textContent = s.total_connectors;
+    document.getElementById('stat-records').textContent = fmtNum(s.total_records_migrated);
+    document.getElementById('api-dot').style.background = '#4ade80';
+    document.getElementById('api-text').textContent = 'API connected';
+
+    const migs = await api('GET', '/api/migrations');
+    const mEl = document.getElementById('dashboard-migrations');
+    if (!migs.length) { mEl.innerHTML = '<div style="color:#4b5563;font-size:13px;">No migrations yet.</div>'; }
+    else {
+      mEl.innerHTML = migs.slice(0,5).map(m=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2240;">
+          <div>
+            <div style="font-size:13px;color:#e2e8f0;">${esc(m.name)}</div>
+            <div style="font-size:11px;color:#64748b;">${esc(m.source_name||'?')} → ${esc(m.target_name||'?')}</div>
+          </div>
+          <span class="badge badge-${m.status}">${m.status}</span>
+        </div>`).join('');
+    }
+
+    const conns = await api('GET', '/api/connectors');
+    const cEl = document.getElementById('dashboard-connectors');
+    if (!conns.length) { cEl.innerHTML = '<div style="color:#4b5563;font-size:13px;">No connectors yet.</div>'; }
+    else {
+      cEl.innerHTML = conns.map(c=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1e2240;">
+          <span style="font-size:20px;">${CONNECTOR_ICONS[c.type]||'🔌'}</span>
+          <div>
+            <div style="font-size:13px;color:#e2e8f0;">${esc(c.name)}</div>
+            <div style="font-size:11px;color:#64748b;">${c.type}</div>
+          </div>
+          <span style="margin-left:auto;" class="badge ${c.tested_ok?'badge-done':'badge-pending'}">${c.tested_ok?'✓ OK':'untested'}</span>
+        </div>`).join('');
+    }
+  } catch(e) {
+    document.getElementById('api-dot').style.background = '#f87171';
+    document.getElementById('api-text').textContent = 'API error';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Connectors
+// ═══════════════════════════════════════════════════════════
+async function loadConnectors() {
+  try {
+    connectors = await api('GET', '/api/connectors');
+    renderConnectors();
+  } catch(e) { toast('Failed to load connectors: '+e.message, 'error'); }
+}
+
+function renderConnectors() {
+  const el = document.getElementById('connectors-list');
+  if (!connectors.length) {
+    el.innerHTML = `<div class="card" style="padding:40px;text-align:center;grid-column:1/-1;">
+      <div style="font-size:40px;margin-bottom:12px;">🔌</div>
+      <div style="color:#e2e8f0;font-weight:600;margin-bottom:6px;">No connectors yet</div>
+      <div style="color:#64748b;font-size:13px;margin-bottom:16px;">Add your first data source or target to get started.</div>
+      <button class="btn btn-primary" onclick="openAddConnector()">+ Add Connector</button>
+    </div>`;
+    return;
+  }
+  el.innerHTML = connectors.map(c => `
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:28px;">${CONNECTOR_ICONS[c.type]||'🔌'}</span>
+          <div>
+            <div style="font-weight:600;color:#e2e8f0;">${esc(c.name)}</div>
+            <div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">${c.type}</div>
+          </div>
+        </div>
+        <span class="badge ${c.tested_ok?'badge-done':'badge-pending'}">${c.tested_ok?'✓ OK':'untested'}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="testConnector('${c.id}', this)">⚡ Test</button>
+        <button class="btn btn-secondary btn-sm" onclick="fetchSchema('${c.id}', this)">📋 Schema</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteConnector('${c.id}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+async function testConnector(cid, btn) {
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await api('POST', `/api/connectors/${cid}/test`);
+    btn.textContent = r.ok ? '✓ OK' : '✗ Fail';
+    btn.style.color = r.ok ? '#4ade80' : '#f87171';
+    toast(r.message, r.ok ? 'ok' : 'error');
+    loadConnectors();
+  } catch(e) { toast(e.message, 'error'); btn.textContent = '⚡ Test'; }
+  finally { btn.disabled = false; }
+}
+
+async function fetchSchema(cid, btn) {
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const schema = await api('POST', `/api/connectors/${cid}/schema`);
+    toast(`Schema fetched: ${schema.entities?.length||0} entities`, 'ok');
+    btn.textContent = '📋 Schema';
+  } catch(e) { toast(e.message, 'error'); btn.textContent = '📋 Schema'; }
+  finally { btn.disabled = false; }
+}
+
+async function deleteConnector(cid) {
+  if (!confirm('Delete this connector?')) return;
+  try {
+    await api('DELETE', `/api/connectors/${cid}`);
+    loadConnectors();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Add Connector Modal
+// ═══════════════════════════════════════════════════════════
+async function openAddConnector() {
+  selectedConnType = null;
+  showStep(1);
+  document.getElementById('conn-name').value = '';
+  document.getElementById('modal-connector').style.display = 'flex';
+  try {
+    const { types } = await api('GET', '/api/connector-types');
+    const grid = document.getElementById('connector-types-grid');
+    grid.innerHTML = types.map(t => `
+      <div onclick="selectConnType('${t.id}','${t.label}')" id="ct-${t.id}"
+           style="padding:12px 8px;border-radius:8px;border:1px solid #2d3148;cursor:pointer;text-align:center;transition:all .12s;">
+        <div style="font-size:24px;margin-bottom:4px;">${t.icon}</div>
+        <div style="font-size:11px;color:#94a3b8;">${t.label}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+function selectConnType(id, label) {
+  selectedConnType = id;
+  document.querySelectorAll('[id^="ct-"]').forEach(el => {
+    el.style.borderColor = '#2d3148'; el.style.background = 'none';
+  });
+  const el = document.getElementById('ct-'+id);
+  if (el) { el.style.borderColor = '#6366f1'; el.style.background = '#1e1f3a'; }
+  renderConfigFields(id);
+  showStep(2);
+  document.getElementById('conn-name').placeholder = `My ${label}`;
+}
+
+function showStep(n) {
+  document.getElementById('conn-step-1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('conn-step-2').style.display = n===2 ? 'block' : 'none';
+}
+
+function renderConfigFields(type) {
+  const el = document.getElementById('conn-config-fields');
+  const configs = {
+    csv: [
+      {key:'folder_path', label:'CSV Folder Path', placeholder:'/data/exports or C:\\data\\exports'},
+    ],
+    postgresql: [
+      {key:'host', label:'Host', placeholder:'localhost'},
+      {key:'port', label:'Port', placeholder:'5432'},
+      {key:'database', label:'Database', placeholder:'mydb'},
+      {key:'user', label:'Username', placeholder:'postgres'},
+      {key:'password', label:'Password', placeholder:'••••••••', type:'password'},
+    ],
+    mysql: [
+      {key:'host', label:'Host', placeholder:'localhost'},
+      {key:'port', label:'Port', placeholder:'3306'},
+      {key:'database', label:'Database', placeholder:'mydb'},
+      {key:'user', label:'Username', placeholder:'root'},
+      {key:'password', label:'Password', placeholder:'••••••••', type:'password'},
+    ],
+    rest_api: restFields(),
+    salesforce: erpRestFields('Salesforce'),
+    sap: erpRestFields('SAP'),
+    oracle: erpRestFields('Oracle'),
+    dynamics: erpRestFields('Dynamics 365'),
+    netsuite: erpRestFields('NetSuite'),
+    quickbooks: erpRestFields('QuickBooks'),
+    hubspot: erpRestFields('HubSpot'),
+    zoho: erpRestFields('Zoho'),
+  };
+  const fields = configs[type] || restFields();
+  el.innerHTML = fields.map(f => `
+    <div style="margin-bottom:12px;">
+      <div class="label">${f.label}</div>
+      ${f.type==='select' ?
+        `<select class="select" id="cfg-${f.key}">${f.options.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}</select>` :
+        `<input class="input" id="cfg-${f.key}" placeholder="${f.placeholder||''}" type="${f.type||'text'}" />`
+      }
+      ${f.hint ? `<div style="font-size:11px;color:#4b5563;margin-top:4px;">${f.hint}</div>` : ''}
+    </div>`).join('');
+}
+
+function restFields() {
+  return [
+    {key:'base_url', label:'Base URL', placeholder:'https://api.example.com'},
+    {key:'auth_type', label:'Auth Type', type:'select', options:[
+      {value:'none', label:'None'}, {value:'api_key', label:'API Key'},
+      {value:'bearer', label:'Bearer Token'}, {value:'basic', label:'Basic Auth'}
+    ]},
+    {key:'api_key', label:'API Key / Token', placeholder:'sk-...', hint:'Used for api_key or bearer auth'},
+    {key:'username', label:'Username (basic auth)', placeholder:'optional'},
+    {key:'password', label:'Password (basic auth)', placeholder:'optional', type:'password'},
+    {key:'endpoints_json', label:'Endpoints (JSON)', placeholder:'[{"name":"customers","path":"/customers","data_key":"results","id_field":"id"}]',
+     hint:'JSON array of endpoint configs'},
+  ];
+}
+
+function erpRestFields(name) {
+  return [
+    {key:'base_url', label:`${name} Base URL`, placeholder:'https://myinstance.example.com/api'},
+    {key:'auth_type', label:'Auth Type', type:'select', options:[
+      {value:'bearer', label:'Bearer Token'}, {value:'api_key', label:'API Key'},
+      {value:'basic', label:'Basic Auth'}
+    ]},
+    {key:'api_key', label:'Token / API Key', placeholder:'paste your token here'},
+    {key:'endpoints_json', label:'Endpoints (JSON)', placeholder:'[{"name":"customers","path":"/v1/customers","data_key":"records","id_field":"id"}]',
+     hint:'Define which entities to expose'},
+  ];
+}
+
+async function saveConnector() {
+  const name = document.getElementById('conn-name').value.trim();
+  if (!name) { toast('Please enter a name', 'error'); return; }
+  if (!selectedConnType) { toast('Select a connector type', 'error'); return; }
+
+  const config = {};
+  document.querySelectorAll('[id^="cfg-"]').forEach(el => {
+    const key = el.id.replace('cfg-', '');
+    config[key] = el.value;
+  });
+
+  // Parse endpoints_json if present
+  if (config.endpoints_json) {
+    try { config.endpoints = JSON.parse(config.endpoints_json); }
+    catch(e) { toast('Invalid endpoints JSON: '+e.message, 'error'); return; }
+    delete config.endpoints_json;
+  }
+
+  const btn = document.getElementById('btn-save-conn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
+  try {
+    await api('POST', '/api/connectors', { name, type: selectedConnType, config });
+    closeModal('modal-connector');
+    loadConnectors();
+    toast('Connector saved!', 'ok');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Connector'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Migrations
+// ═══════════════════════════════════════════════════════════
+async function loadMigrations() {
+  try {
+    migrations = await api('GET', '/api/migrations');
+    renderMigrations();
+  } catch(e) { toast('Failed to load migrations: '+e.message, 'error'); }
+}
+
+function renderMigrations() {
+  const el = document.getElementById('migrations-list');
+  if (!migrations.length) {
+    el.innerHTML = `<div class="card" style="padding:40px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">🚀</div>
+      <div style="color:#e2e8f0;font-weight:600;margin-bottom:6px;">No migrations yet</div>
+      <div style="color:#64748b;font-size:13px;margin-bottom:16px;">Create your first migration to get started.</div>
+      <button class="btn btn-primary" onclick="openNewMigration()">+ New Migration</button>
+    </div>`;
+    return;
+  }
+  el.innerHTML = migrations.map(m => {
+    const pct = m.total_records > 0 ? Math.round((m.done_records/m.total_records)*100) : 0;
+    return `<div class="card" style="padding:18px;cursor:pointer;" onclick="openMigrationDetail('${m.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <div style="font-weight:600;color:#e2e8f0;">${esc(m.name)}</div>
+            <span class="badge badge-${m.status}">${m.status}</span>
+          </div>
+          <div style="font-size:12px;color:#64748b;">${esc(m.source_name||'?')} → ${esc(m.target_name||'?')}</div>
+        </div>
+        <div style="text-align:right;min-width:120px;margin-left:20px;">
+          ${m.status==='running' ? `<div style="font-size:12px;color:#a5b4fc;margin-bottom:4px;">${m.done_records||0} / ${m.total_records||'?'} rows</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>` :
+          m.status==='done' ? `<div style="font-size:12px;color:#4ade80;">${fmtNum(m.done_records||0)} rows migrated</div>` :
+          `<div style="font-size:12px;color:#4b5563;">${new Date(m.created_at).toLocaleDateString()}</div>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openNewMigration() {
+  try {
+    connectors = await api('GET', '/api/connectors');
+    if (connectors.length < 2) {
+      toast('You need at least 2 connectors to create a migration.', 'error'); return;
+    }
+    const src = document.getElementById('mig-source');
+    const tgt = document.getElementById('mig-target');
+    const opts = connectors.map(c => `<option value="${c.id}">${CONNECTOR_ICONS[c.type]||'🔌'} ${esc(c.name)} (${c.type})</option>`).join('');
+    src.innerHTML = opts; tgt.innerHTML = opts;
+    if (connectors.length >= 2) tgt.selectedIndex = 1;
+    document.getElementById('mig-name').value = '';
+    document.getElementById('entity-pairs').innerHTML = '';
+    addEntityPair();
+    document.getElementById('modal-migration').style.display = 'flex';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+let sourceEntities = [];
+let targetEntities = [];
+
+async function loadEntities(which) {
+  const cid = document.getElementById(`mig-${which}`).value;
+  if (!cid) return;
+  try {
+    const r = await api('GET', `/api/connectors/${cid}`);
+    if (which==='source') sourceEntities = r.schema?.entities?.map(e=>e.name) || [];
+    else targetEntities = r.schema?.entities?.map(e=>e.name) || [];
+    refreshEntitySelects();
+  } catch(e) {}
+}
+
+function refreshEntitySelects() {
+  document.querySelectorAll('.ep-src').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = ['<option value="">-- choose source entity --']
+      .concat(sourceEntities.map(e=>`<option value="${e}">${e}</option>`)).join('');
+    if (cur) sel.value = cur;
+  });
+  document.querySelectorAll('.ep-tgt').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = ['<option value="">-- choose target entity --']
+      .concat(targetEntities.map(e=>`<option value="${e}">${e}</option>`)).join('');
+    if (cur) sel.value = cur;
+  });
+}
+
+function addEntityPair() {
+  const container = document.getElementById('entity-pairs');
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;';
+  div.innerHTML = `
+    <select class="select ep-src" style="font-size:13px;">
+      <option value="">-- source entity --</option>
+      ${sourceEntities.map(e=>`<option value="${e}">${e}</option>`).join('')}
+    </select>
+    <select class="select ep-tgt" style="font-size:13px;">
+      <option value="">-- target entity --</option>
+      ${targetEntities.map(e=>`<option value="${e}">${e}</option>`).join('')}
+    </select>
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(div);
+}
+
+async function saveMigration() {
+  const name = document.getElementById('mig-name').value.trim();
+  const source_id = document.getElementById('mig-source').value;
+  const target_id = document.getElementById('mig-target').value;
+  const batch_size = parseInt(document.getElementById('mig-batch').value) || 500;
+  const mode = document.getElementById('mig-mode').value;
+  const dry_run = document.getElementById('mig-dry-run').checked;
+
+  if (!name) { toast('Enter a migration name', 'error'); return; }
+  if (source_id === target_id) { toast('Source and target must be different', 'error'); return; }
+
+  const entities = [];
+  document.querySelectorAll('#entity-pairs > div').forEach(row => {
+    const src = row.querySelector('.ep-src').value;
+    const tgt = row.querySelector('.ep-tgt').value;
+    if (src && tgt) entities.push({ source_entity: src, target_entity: tgt });
+  });
+  if (!entities.length) { toast('Add at least one entity pair', 'error'); return; }
+
+  try {
+    const r = await api('POST', '/api/migrations', {
+      name, source_id, target_id, entities,
+      config: { batch_size, mode, dry_run }
+    });
+    closeModal('modal-migration');
+    loadMigrations();
+    toast('Migration created!', 'ok');
+    openMigrationDetail(r.id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Migration Detail
+// ═══════════════════════════════════════════════════════════
+async function openMigrationDetail(mid) {
+  currentMigrationId = mid;
+  document.getElementById('modal-mig-detail').style.display = 'flex';
+  detailTab('overview');
+  await refreshDetail();
+}
+
+async function refreshDetail() {
+  if (!currentMigrationId) return;
+  try {
+    const m = await api('GET', `/api/migrations/${currentMigrationId}`);
+    document.getElementById('detail-title').textContent = m.name;
+    document.getElementById('detail-status-badge').innerHTML = `<span class="badge badge-${m.status}" style="font-size:13px;">${m.status}</span>`;
+
+    const pct = m.total_records > 0 ? Math.round((m.done_records/m.total_records)*100) : 0;
+    document.getElementById('detail-progress-text').textContent =
+      m.status==='done' ? `${fmtNum(m.done_records)} rows migrated` :
+      m.status==='running' ? `${m.done_records||0} / ${m.total_records||'?'} (${pct}%)` : '—';
+    document.getElementById('detail-progress-fill').style.width = pct+'%';
+    document.getElementById('detail-records').innerHTML =
+      `<span style="color:#4ade80;">${fmtNum(m.done_records||0)} ok</span>&nbsp;
+       <span style="color:#f87171;">${fmtNum(m.fail_records||0)} fail</span>&nbsp;
+       <span style="color:#94a3b8;">${fmtNum(m.total_records||0)} total</span>`;
+
+    // Get connector names
+    const conns = await api('GET', '/api/connectors');
+    const src = conns.find(c=>c.id===m.source_id);
+    const tgt = conns.find(c=>c.id===m.target_id);
+    document.getElementById('detail-connectors').textContent =
+      `${src?.name||'?'} → ${tgt?.name||'?'}`;
+
+    // Render mapping if available
+    if (m.field_mapping && m.field_mapping.length) {
+      renderMapping(m.field_mapping);
+    }
+
+    // Auto-poll if running
+    if (m.status === 'running') {
+      if (!pollInterval) pollInterval = setInterval(refreshDetail, 2500);
+    } else {
+      clearInterval(pollInterval); pollInterval = null;
+    }
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderMapping(mapping) {
+  const el = document.getElementById('mapping-content');
+  el.innerHTML = `
+    <div style="font-size:12px;color:#64748b;margin-bottom:12px;">${mapping.length} field mappings</div>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="color:#64748b;text-align:left;border-bottom:1px solid #2d3148;">
+          <th style="padding:8px 10px;">Source Field</th>
+          <th style="padding:8px 10px;">Target Field</th>
+          <th style="padding:8px 4px;">Confidence</th>
+          <th style="padding:8px 10px;">Transform</th>
+          <th style="padding:8px 10px;">Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${mapping.map(m => {
+          const conf = m.confidence || 0;
+          const cls = conf >= .8 ? 'conf-high' : conf >= .5 ? 'conf-mid' : 'conf-low';
+          return `<tr style="border-bottom:1px solid #1e2240;">
+            <td style="padding:8px 10px;color:#a5b4fc;">${esc(m.source_field||'—')}</td>
+            <td style="padding:8px 10px;color:#e2e8f0;">${esc(m.target_field||'—')}</td>
+            <td style="padding:8px 4px;" class="${cls}">${(conf*100).toFixed(0)}%</td>
+            <td style="padding:8px 10px;color:#f59e0b;font-family:monospace;font-size:11px;">${esc(m.transform||'')}</td>
+            <td style="padding:8px 10px;color:#64748b;">${esc(m.reason||'')}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+async function generateMapping() {
+  if (!currentMigrationId) return;
+  const btn = document.getElementById('btn-map');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Mapping...';
+  try {
+    const m = await api('GET', `/api/migrations/${currentMigrationId}`);
+    const entities = m.entities || [];
+    if (!entities.length) { toast('No entity pairs defined', 'error'); return; }
+    const pair = entities[0];
+    const r = await api('POST', `/api/migrations/${currentMigrationId}/map`, {
+      source_entity: pair.source_entity,
+      target_entity: pair.target_entity
+    });
+    renderMapping(r.mapping);
+    detailTab('mapping');
+    toast(`Mapped ${r.count} fields with AI`, 'ok');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '🤖 AI Map Fields'; }
+}
+
+async function runMigration() {
+  if (!currentMigrationId) return;
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Starting...';
+  try {
+    await api('POST', `/api/migrations/${currentMigrationId}/run`);
+    toast('Migration started!', 'ok');
+    refreshDetail();
+    detailTab('logs');
+    setTimeout(loadLogs, 800);
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '▶ Run Migration'; }
+}
+
+async function loadLogs() {
+  if (!currentMigrationId) return;
+  try {
+    const logs = await api('GET', `/api/migrations/${currentMigrationId}/logs`);
+    const el = document.getElementById('logs-content');
+    if (!logs.length) { el.innerHTML = '<div style="color:#4b5563;">No logs yet.</div>'; return; }
+    el.innerHTML = logs.map(l => {
+      const cls = l.level==='error' ? 'log-error' : 'log-info';
+      const ts = new Date(l.ts).toLocaleTimeString();
+      return `<div class="${cls}"><span style="color:#374151;">[${ts}]</span> ${esc(l.message)}</div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  } catch(e) {}
+}
+
+function detailTab(tab) {
+  ['overview','mapping','logs'].forEach(t => {
+    document.getElementById('detail-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('dt-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab==='logs') loadLogs();
+}
+
+// ═══════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+  if (id==='modal-mig-detail') {
+    clearInterval(pollInterval); pollInterval = null;
+    currentMigrationId = null;
+  }
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return '0';
+  return Number(n).toLocaleString();
+}
+
+let _toastTimer;
+function toast(msg, type='ok') {
+  clearTimeout(_toastTimer);
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:500;max-width:320px;transition:opacity .3s;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.background = type==='ok' ? '#14532d' : '#450a0a';
+  el.style.color = type==='ok' ? '#4ade80' : '#f87171';
+  el.style.border = `1px solid ${type==='ok' ? '#166534' : '#7f1d1d'}`;
+  _toastTimer = setTimeout(() => el.style.opacity='0', 3500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// Boot
+// ═══════════════════════════════════════════════════════════
+loadDashboard();
+</script>
+</body>
+</html>
