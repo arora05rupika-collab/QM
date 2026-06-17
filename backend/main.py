@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.api.deps import create_tables
-from app.api.routes import auth_router, connectors_router, migrations_router, automation_router, discrepancies_router
+from app.api.routes import auth_router, connectors_router, migrations_router, automation_router, discrepancies_router, supplier_compliance_router
 
 # Import connectors to trigger their @registry.register decorators
 import app.connectors.postgresql_connector  # noqa: F401
@@ -49,6 +49,7 @@ app.include_router(connectors_router, prefix="/api")
 app.include_router(migrations_router, prefix="/api")
 app.include_router(automation_router, prefix="/api")
 app.include_router(discrepancies_router, prefix="/api")
+app.include_router(supplier_compliance_router, prefix="/api")
 
 
 @app.get("/health")

@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "us-east-1"
 
+    # Email / SMTP (for supplier compliance notifications)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAIL_FROM: str = ""
+
+    # Uploads directory
+    UPLOADS_DIR: str = "uploads"
+
     model_config = {"env_file": ".env", "case_sensitive": True}
 
 

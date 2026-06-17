@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Database, ArrowLeftRight, Zap, Home, LogOut, Settings, ChevronRight, FileCheck
+  Database, ArrowLeftRight, Zap, Home, LogOut, Settings, ChevronRight, FileCheck, Package
 } from 'lucide-react'
 import { authApi } from '../../services/api'
 import clsx from 'clsx'
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/connectors', label: 'Connectors', icon: Database },
   { path: '/migrations', label: 'Migrations', icon: ArrowLeftRight },
   { path: '/automation', label: 'Automation', icon: Zap },
+  { path: '/supplier-compliance', label: 'Supplier Compliance', icon: Package },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {

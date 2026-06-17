@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, JSON, Float, Boolean, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, String, Text, DateTime, JSON, Float, Boolean, ForeignKey, Enum as SAEnum, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -230,3 +230,47 @@ class AutomationRun(Base):
     started_at = Column(DateTime, server_default=func.now())
     completed_at = Column(DateTime, nullable=True)
     workflow = relationship("AutomationWorkflow", back_populates="runs")
+
+
+# ─── Supplier Compliance Portal ───────────────────────────────────────────────
+
+class VendorType(str, Enum):
+    PREFERRED = "preferred"
+    ALTERNATIVE = "alternative"
+
+
+class SupplierStatus(str, Enum):
+    UNDER_REVIEW = "under_review"
+    SENT_REQUEST = "sent_request"
+    UNDER_PROCESS = "under_process"
+    REJECTED_WITH_COMMENTS = "rejected_with_comments"
+    ACCEPTED_WITH_COMMENTS = "accepted_with_comments"
+
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
+    id = Column(String, primary_key=True, default=gen_uuid)
+    name = Column(String(255), nullable=False)
+    raw_materials = Column(JSON, nullable=True)  # list of strings
+    contact_email = Column(String(255), nullable=False)
+    vendor_type = Column(SAEnum(VendorType), default=VendorType.PREFERRED)
+    status = Column(SAEnum(SupplierStatus), default=SupplierStatus.UNDER_REVIEW)
+    comments = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    documents = relationship("RawMaterialDoc", back_populates="supplier", cascade="all, delete-orphan")
+
+
+class RawMaterialDoc(Base):
+    __tablename__ = "raw_material_docs"
+    id = Column(String, primary_key=True, default=gen_uuid)
+    supplier_id = Column(String, ForeignKey("suppliers.id"), nullable=True)
+    supplier_name = Column(String(255), nullable=False)
+    file_name = Column(String(500), nullable=False)
+    file_path = Column(Text, nullable=True)
+    document_type = Column(String(255), nullable=False)
+    raw_materials = Column(JSON, nullable=True)  # list of strings
+    expiry_date = Column(Date, nullable=True)
+    notification_sent = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    supplier = relationship("Supplier", back_populates="documents")

@@ -9,6 +9,7 @@ import Automation from './pages/Automation'
 import Flashcards from './pages/Flashcards'
 import ValidationReport from './pages/ValidationReport'
 import Login from './pages/Login'
+import SupplierCompliance from './pages/SupplierCompliance'
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/automation" element={<PrivateRoute><Automation /></PrivateRoute>} />
           <Route path="/flashcards/:migrationId" element={<PrivateRoute><Flashcards /></PrivateRoute>} />
           <Route path="/report/:migrationId" element={<PrivateRoute><ValidationReport /></PrivateRoute>} />
+          <Route path="/supplier-compliance" element={<PrivateRoute><SupplierCompliance /></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
       <Toaster

@@ -79,4 +79,24 @@ export const automationApi = {
     api.patch(`/automation/${id}/status`, null, { params: { status } }).then(r => r.data),
 }
 
+// ─── Supplier Compliance ──────────────────────────────────────────────────────
+
+export const suppliersApi = {
+  list: () => api.get('/supplier-compliance/suppliers').then(r => r.data),
+  create: (payload: object) => api.post('/supplier-compliance/suppliers', payload).then(r => r.data),
+  update: (id: string, payload: object) => api.patch(`/supplier-compliance/suppliers/${id}`, payload).then(r => r.data),
+  delete: (id: string) => api.delete(`/supplier-compliance/suppliers/${id}`).then(r => r.data),
+  sendRequest: (id: string) => api.post(`/supplier-compliance/suppliers/${id}/send-request`).then(r => r.data),
+}
+
+export const rawMaterialDocsApi = {
+  list: () => api.get('/supplier-compliance/documents').then(r => r.data),
+  upload: (formData: FormData) => api.post('/supplier-compliance/documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data),
+  delete: (id: string) => api.delete(`/supplier-compliance/documents/${id}`).then(r => r.data),
+  checkExpiry: () => api.post('/supplier-compliance/documents/check-expiry').then(r => r.data),
+  downloadUrl: (id: string) => `/api/supplier-compliance/documents/${id}/download`,
+}
+
 export default api
