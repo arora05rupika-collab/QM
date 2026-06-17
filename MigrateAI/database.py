@@ -5,7 +5,7 @@ Zero setup required. File lives on Desktop automatically.
 import sqlite3, os, json
 from datetime import datetime
 
-_default_db = os.path.join(os.path.expanduser("~"), "Desktop", "migrateai.db")
+_default_db = os.path.join("/app", "migrateai.db")
 DB_PATH = os.getenv("DB_PATH", _default_db)
 
 
