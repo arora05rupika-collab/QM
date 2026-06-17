@@ -1,12 +1,13 @@
 """
 SQLite database — stores connectors, migrations, logs.
-Zero setup required. File lives on Desktop automatically.
+Zero setup required. File lives in the app data directory automatically.
 """
 import sqlite3, os, json
 from datetime import datetime
 
-_default_db = os.path.join(os.path.expanduser("~"), "Desktop", "migrateai.db")
+_default_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "migrateai.db")
 DB_PATH = os.getenv("DB_PATH", _default_db)
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 
 def get_conn():
